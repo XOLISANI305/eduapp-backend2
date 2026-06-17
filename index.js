@@ -32,8 +32,13 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(session({ secret: 'secret', resave: false, saveUninitialized: true }));
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'secret', // ✅ use env var
+  resave: false,
+  saveUninitialized: false // better default
+}));
 app.use(passport.initialize());
+app.use(passport.session());
 
 // Static uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -56,12 +61,10 @@ app.use('/student', studentDashboardRoutes);
 
 app.get('/dashboard', (req, res) => res.json({ message: 'Authenticated!' }));
 app.get('/admin', (req, res) => res.json({ message: 'Admin route!' }));
-
-
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, "0.0.0.0", () => console.log(`✅ Server running on port ${PORT}`));
-
 app.use("/api/users", userRoutes);
 
 
 app.use("/api/student", studentRoutes);
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, "0.0.0.0", () => console.log(`✅ Server running on port ${PORT}`));
