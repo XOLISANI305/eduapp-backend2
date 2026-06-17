@@ -3,7 +3,7 @@ import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import pool from '../models/db.js'; // Postgres connection
 import dotenv from 'dotenv';
 dotenv.config();
-
+console.log('Callback URL:', process.env.GOOGLE_CALLBACK_URL);
 passport.use(
   new GoogleStrategy(
     {
