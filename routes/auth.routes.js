@@ -43,13 +43,13 @@ function isAllowedRedirect(url) {
 
 // Start Google login (frontend hits this)
 router.get(
-  '/auth/google',
+  '/google',
   passport.authenticate('google', { scope: ['profile', 'email'], session: false })
 );
 
 // Google OAuth callback
 router.get(
-  '/auth/google/callback',
+  '/google/callback',
   passport.authenticate('google', { session: false, failureRedirect: '/login' }),
   (req, res) => {
     const user = req.user;
