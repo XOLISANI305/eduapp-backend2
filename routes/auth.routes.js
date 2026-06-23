@@ -49,38 +49,23 @@ router.get(
 
 // Google OAuth callback
 router.get(
-  '/google/callback',
-  passport.authenticate('google', { session: false, failureRedirect: '/login' }),
+  "/google/callback",
+  passport.authenticate("google", { session: false, failureRedirect: "/login" }),
   (req, res) => {
     const user = req.user;
+
     const token = jwt.sign(
       { userId: user.id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: '2h' }
+      { expiresIn: "2h" }
     );
 
-    const redirectTo = req.query.redirect || process.env.FRONTEND_URL;
+    // ✅ CLEAN REDIRECT BACK TO EXPO
+    const redirectUrl = `eduapp://redirect?token=${token}`;
 
-    // Optional: whitelist check
-    if (redirectTo && isAllowedRedirect(redirectTo)) {
-      const separator = redirectTo.includes('?') ? '&' : '?';
-      return res.redirect(`${redirectTo}${separator}token=${token}`);
-    }
-
-    // If no redirect, just return JSON
-    res.json({
-      token,
-      user: {
-        id: user.id,
-        full_name: user.full_name,
-        email: user.email,
-        role: user.role,
-      },
-    });
+    return res.redirect(redirectUrl);
   }
 );
-
-
 
 router.get('/verify/:token', verifyEmail);
 
