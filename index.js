@@ -66,5 +66,17 @@ app.use("/api/users", userRoutes);
 
 app.use("/api/student", studentRoutes);
 
+// Temporary debug route
+app.get('/debug-env', (req, res) => {
+  res.json({
+    clientId: process.env.GOOGLE_CLIENT_ID ? '✅ loaded' : '❌ missing',
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET ? '✅ loaded' : '❌ missing',
+    callbackUrl: process.env.GOOGLE_CALLBACK_URL,
+    jwtSecret: process.env.JWT_SECRET ? '✅ loaded' : '❌ missing',
+  });
+});
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, "0.0.0.0", () => console.log(`✅ Server running on port ${PORT}`));
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, "0.0.0.0", () => console.log(`✅ Server running on port ${PORT}`));
