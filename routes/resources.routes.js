@@ -7,21 +7,51 @@ import {
   deleteResource
 } from '../controllers/resources.controller.js';
 import multer from 'multer';
+import { v2 as cloudinary } from 'cloudinary';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
 
 const router = express.Router();
 
-// ------------------------ MULTER SETUP ------------------------
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/'); // Make sure this folder exists
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + '-' + file.originalname);
-  }
+// ------------------------ CLOUDINARY SETUP ------------------------
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-const upload = multer({ 
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: async (req, file) => {
+    let resourceType = 'auto';
+    let folder = 'eduapp/documents';
+
+    if (file.mimetype.startsWith('image/')) {
+      folder = 'eduapp/images';
+    } else if (file.mimetype.startsWith('video/')) {
+      folder = 'eduapp/videos';
+      resourceType = 'video';
+    } else {
+      folder = 'eduapp/docs';
+      resourceType = 'raw';
+    }
+
+    return {
+      folder,
+      resource_type: resourceType,
+      allowed_formats: [
+        'jpg', 'jpeg', 'png', 'gif', 'webp',
+        'mp4', 'mov', 'avi', 'mkv',
+        'pdf', 'doc', 'docx',
+        'xls', 'xlsx', 'csv',
+        'ppt', 'pptx',
+        'mp3', 'wav', 'm4a',
+        'txt',
+      ],
+    };
+  },
+});
+
+const upload = multer({
   storage,
   limits: { fileSize: 150 * 1024 * 1024 }, // 150 MB
 });
@@ -33,7 +63,7 @@ router.post(
   '/',
   requireAuth,
   authorizeRoles('teacher', 'admin'),
-  upload.single('file'), // receive a single file
+  upload.single('file'),
   createResource
 );
 
