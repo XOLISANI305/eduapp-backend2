@@ -1,11 +1,11 @@
-// models/resource.model.js
 import db from './db.js';
 
 class Resource {
-  static async create({ topic_id, type, title, file_path, url }) {
+  static async create({ topic_id, type, title, file_path, cloudinary_id, url }) {
     const result = await db.query(
-      'INSERT INTO resources (topic_id, type, title, file_path, url) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [topic_id, type, title, file_path, url]
+      `INSERT INTO resources (topic_id, type, title, file_path, cloudinary_id, url) 
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [topic_id, type, title, file_path, cloudinary_id || null, url]
     );
     return result.rows[0];
   }
