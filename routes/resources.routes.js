@@ -55,10 +55,7 @@ const upload = multer({
   storage,
   limits: { fileSize: 150 * 1024 * 1024 }, // 150 MB
 });
-app.use((req, res, next) => {
-  console.log(req.method, req.originalUrl);
-  next();
-});
+
 // ------------------------ ROUTES ------------------------
 router.get('/topic/:topicId', requireAuth, getResourcesByTopic);
 
