@@ -55,15 +55,29 @@ const upload = multer({
   storage,
   limits: { fileSize: 150 * 1024 * 1024 }, // 150 MB
 });
-
+app.use((req, res, next) => {
+  console.log(req.method, req.originalUrl);
+  next();
+});
 // ------------------------ ROUTES ------------------------
 router.get('/topic/:topicId', requireAuth, getResourcesByTopic);
 
 router.post(
-  '/',
+  "/",
   requireAuth,
-  authorizeRoles('teacher', 'admin'),
-  upload.single('file'),
+  authorizeRoles("teacher", "admin"),
+  (req, res, next) => {
+    upload.single("file")(req, res, (err) => {
+      if (err) {
+        console.log("MULTER ERROR:", err);
+        return res.status(500).json({
+          message: err.message,
+          stack: err,
+        });
+      }
+      next();
+    });
+  },
   createResource
 );
 
