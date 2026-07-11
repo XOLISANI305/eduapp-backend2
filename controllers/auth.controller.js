@@ -3,7 +3,6 @@ import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import pool from '../models/db.js';
 import { sendVerificationEmail } from '../services/email.js';
-import { setRole } from '../controllers/auth.controller.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
