@@ -22,14 +22,18 @@ cloudinary.config({
 const storage = new CloudinaryStorage({
   cloudinary,
   params: async (req, file) => {
-    let resourceType = 'auto';
-    let folder = 'eduapp/documents';
+    let resourceType = 'raw';
+    let folder = 'eduapp/docs';
 
     if (file.mimetype.startsWith('image/')) {
       folder = 'eduapp/images';
+      resourceType = 'image';
     } else if (file.mimetype.startsWith('video/')) {
       folder = 'eduapp/videos';
       resourceType = 'video';
+    } else if (file.mimetype === 'application/pdf') {
+      folder = 'eduapp/pdfs';
+      resourceType = 'image';
     } else {
       folder = 'eduapp/docs';
       resourceType = 'raw';
@@ -38,15 +42,6 @@ const storage = new CloudinaryStorage({
     return {
       folder,
       resource_type: resourceType,
-      allowed_formats: [
-        'jpg', 'jpeg', 'png', 'gif', 'webp',
-        'mp4', 'mov', 'avi', 'mkv',
-        'pdf', 'doc', 'docx',
-        'xls', 'xlsx', 'csv',
-        'ppt', 'pptx',
-        'mp3', 'wav', 'm4a',
-        'txt',
-      ],
     };
   },
 });
