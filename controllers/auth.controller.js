@@ -45,7 +45,22 @@ export const signup = async (req, res) => {
        VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
       [full_name, email, hashedPassword, role, verificationToken, isVerified]
     );
+export const setRole = async (req, res) => {
+  try {
+    const { role } = req.body;
+    const userId = req.user.userId;
 
+    const allowedRoles = ["student", "teacher", "parent", "admin"];
+    if (!allowedRoles.includes(role)) {
+      return res.status(400).json({ message: "Invalid role" });
+    }
+
+    await pool.query('UPDATE users SET role = $1 WHERE id = $2', [role, userId]);
+    res.json({ message: "Role updated successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
     // Send verification email for non-OAuth users
     if (!oauthUser) {
       const verificationUrl = `${process.env.BACKEND_URL}/api/auth/verify/${verificationToken}`;

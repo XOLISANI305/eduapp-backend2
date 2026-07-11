@@ -41,6 +41,7 @@ function isAllowedRedirect(url) {
   return whitelist.includes(url);
 }
 
+router.post('/set-role', requireAuth, setRole);
 // Start Google login (frontend hits this)
 router.get(
   '/google',
