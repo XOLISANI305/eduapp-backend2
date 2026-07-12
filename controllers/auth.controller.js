@@ -18,9 +18,13 @@ export const signup = async (req, res) => {
     }
 
     const userCheck = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-    if (userCheck.rows.length > 0) {
-      return res.status(400).json({ message: 'Email already exists' });
+    const existingUser = userCheck.rows[0];
+
+       if (existingUser && existingUser.is_verified) {
+          return res.status(400).json({ message: 'Email already exists' });
     }
+
+// If existingUser is found but unverified, we'll update that row below instead of inserting
 
     let hashedPassword = null;
     let verificationToken = null;
@@ -36,11 +40,22 @@ export const signup = async (req, res) => {
       isVerified = true;
     }
 
-    const newUser = await pool.query(
-      `INSERT INTO users (full_name, email, password_hash, role, verification_token, is_verified)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [full_name, email, hashedPassword, role, verificationToken, isVerified]
-    );
+    let newUser;
+if (existingUser) {
+  // Unverified account re-registering: update instead of duplicate insert
+  newUser = await pool.query(
+    `UPDATE users
+     SET full_name = $1, password_hash = $2, role = $3, verification_token = $4, is_verified = $5
+     WHERE email = $6 RETURNING *`,
+    [full_name, hashedPassword, role, verificationToken, isVerified, email]
+  );
+} else {
+  newUser = await pool.query(
+    `INSERT INTO users (full_name, email, password_hash, role, verification_token, is_verified)
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+    [full_name, email, hashedPassword, role, verificationToken, isVerified]
+  );
+}
 
     if (!oauthUser) {
       const verificationUrl = `${process.env.BACKEND_URL}/api/auth/verify/${verificationToken}`;
@@ -105,8 +120,6 @@ export const login = async (req, res) => {
 
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
-
-    if (!user.is_verified) return res.status(401).json({ message: 'Email not verified. Please check your inbox!' });
 
     const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1d' });
 
