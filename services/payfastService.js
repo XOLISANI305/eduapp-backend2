@@ -2,35 +2,30 @@ import crypto from "crypto";
 
 class PayFastService {
 
-  static generateSignature(data, passphrase = "") {
+static generateSignature(data, passphrase = "") {
 
-    const sorted = Object.keys(data)
-      .sort()
-      .reduce((obj, key) => {
-        obj[key] = data[key];
-        return obj;
-      }, {});
+  let query = "";
 
-    let query = "";
+  for (const key in data) {
 
-    for (const key in sorted) {
-      if (
-        sorted[key] !== null &&
-        sorted[key] !== undefined &&
-        sorted[key] !== ""
-      ) {
-        query += `${key}=${encodeURIComponent(sorted[key]).replace(/%20/g, "+")}&`;
-      }
+    if (
+      data[key] !== null &&
+      data[key] !== undefined &&
+      data[key] !== ""
+    ) {
+      query += `${key}=${encodeURIComponent(data[key]).replace(/%20/g, "+")}&`;
     }
 
-    if (passphrase) {
-      query += `passphrase=${encodeURIComponent(passphrase).replace(/%20/g, "+")}`;
-    } else {
-      query = query.slice(0, -1);
-    }
-
-    return crypto.createHash("md5").update(query).digest("hex");
   }
+
+  if (passphrase) {
+    query += `passphrase=${encodeURIComponent(passphrase).replace(/%20/g, "+")}`;
+  } else {
+    query = query.slice(0, -1);
+  }
+
+  return crypto.createHash("md5").update(query).digest("hex");
+}
 
   static createPayment(data) {
 
