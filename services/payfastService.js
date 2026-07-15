@@ -24,6 +24,8 @@ static generateSignature(data, passphrase = "") {
     query = query.slice(0, -1);
   }
 
+  console.log("PayFast signature string:", query);
+
   return crypto.createHash("md5").update(query).digest("hex");
 }
 
