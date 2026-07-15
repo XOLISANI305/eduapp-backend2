@@ -1,12 +1,13 @@
 import express from "express";
-
+import { downloadResource, streamVideo } from "../controllers/resources.controller.js";
+import { askTutor } from "../controllers/aiTutorController.js";
 import SubscriptionController
 from "../controllers/subscriptionController.js";
 import { requireFeature }
 from "../middlewares/subscriptionMiddleware.js";
 
-import authenticateUser
-from "../middlewares/authMiddleware.js";
+import { requireAuth }
+from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
 

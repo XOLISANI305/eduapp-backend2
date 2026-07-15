@@ -18,6 +18,14 @@ class Resource {
     return result.rows[0];
   }
 
+static async getById(id) {
+  const result = await db.query(
+    'SELECT * FROM resources WHERE id = $1',
+    [id]
+  );
+  return result.rows[0];
+}
+
   static async getByTopic(topicId) {
     const result = await db.query(
       'SELECT * FROM resources WHERE topic_id = $1 ORDER BY created_at DESC',
