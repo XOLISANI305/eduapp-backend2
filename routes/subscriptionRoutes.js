@@ -3,9 +3,7 @@ import { downloadResource, streamVideo } from "../controllers/resources.controll
 import { askTutor } from "../controllers/aiTutorController.js";
 import SubscriptionController from "../controllers/subscriptionController.js";
 import { requireAuth as authenticateUser } from "../middlewares/auth.middleware.js";
-
-import { requireAuth }
-from "../middlewares/auth.middleware.js";
+import { requireFeature } from "../middlewares/subscriptionMiddleware.js";
 
 const router = express.Router();
 
