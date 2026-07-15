@@ -154,3 +154,56 @@ if (resource.type === "video") {
 
   }
 };
+
+// Download a resource file (gated by requireFeature("downloads") middleware)
+export const downloadResource = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const resource = await Resource.getById(id);
+
+    if (!resource) {
+      return res.status(404).json({ message: "Resource not found" });
+    }
+
+    if (!resource.file_path) {
+      return res.status(400).json({ message: "This resource has no downloadable file" });
+    }
+
+    // Redirect to the Cloudinary-hosted file so the client downloads it directly
+    return res.redirect(resource.file_path);
+
+  } catch (err) {
+    console.error("Error downloading resource:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
+// Stream a video resource (gated by requireFeature("videos") middleware)
+export const streamVideo = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const resource = await Resource.getById(id);
+
+    if (!resource) {
+      return res.status(404).json({ message: "Resource not found" });
+    }
+
+    if (resource.type !== "video") {
+      return res.status(400).json({ message: "This resource is not a video" });
+    }
+
+    if (!resource.file_path) {
+      return res.status(400).json({ message: "This video has no file available" });
+    }
+
+    // Redirect to the Cloudinary-hosted video URL
+    return res.redirect(resource.file_path);
+
+  } catch (err) {
+    console.error("Error streaming video:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
