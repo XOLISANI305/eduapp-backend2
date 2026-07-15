@@ -1,5 +1,6 @@
 import Resource from '../models/resource.model.js';
 import { v2 as cloudinary } from 'cloudinary';
+import SubscriptionService from "../services/subscriptionService.js";
 
 // Create resource
 export const createResource = async (req, res) => {
@@ -79,22 +80,77 @@ export const deleteResource = async (req, res) => {
 };
 
 // Get resources by topic
+// Get resources by topic
 export const getResourcesByTopic = async (req, res) => {
   try {
+
     const { topicId } = req.params;
+    const userId = req.user.id;
 
     if (!topicId) {
-      return res.status(400).json({ message: 'Topic ID is required' });
+      return res.status(400).json({
+        message: "Topic ID is required"
+      });
     }
 
     const resources = await Resource.getByTopic(parseInt(topicId));
-    console.log(`Found ${resources.length} resources for topic ${topicId}`);
+
+    // Check subscription once
+    const canDownload =
+      await SubscriptionService.canDownload(userId);
+
+    const videoLimit =
+      await SubscriptionService.getVideoLimit(userId);
+
+    // Add lock status to each resource
+    for (const resource of resources) {
+
+      resource.locked = false;
+
+      // Word documents
+     // Premium downloadable files
+if (
+  resource.type === "word" ||
+  resource.type === "document"
+) {
+  resource.locked = !canDownload;
+}
+
+// PDFs are available to everyone
+if (resource.type === "pdf") {
+  resource.locked = false;
+}
+
+// Videos (we'll enforce limits next)
+if (resource.type === "video") {
+  resource.locked = false;
+}
+
+      // Videos
+      if (resource.type === "video") {
+
+        if (videoLimit !== null) {
+          resource.locked = false; // we'll enforce limits later
+        }
+
+      }
+
+    }
+
+    console.log(
+      `Found ${resources.length} resources for topic ${topicId}`
+    );
+
     res.json(resources);
+
   } catch (err) {
-    console.error('Error getting resources:', err);
+
+    console.error("Error getting resources:", err);
+
     res.status(500).json({
-      message: 'Server error',
+      message: "Server error",
       error: err.message
     });
+
   }
 };

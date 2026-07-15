@@ -9,7 +9,7 @@ import {
 import multer from 'multer';
 import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
-
+import { requireFeature } from "../middlewares/subscriptionMiddleware.js";
 const router = express.Router();
 
 // ------------------------ CLOUDINARY SETUP ------------------------
@@ -52,7 +52,12 @@ const upload = multer({
 });
 
 // ------------------------ ROUTES ------------------------
-router.get('/topic/:topicId', requireAuth, getResourcesByTopic);
+router.get(
+  "/topic/:topicId",
+  requireAuth,
+  requireFeature("downloads"),
+  getResourcesByTopic
+);
 
 router.post(
   "/",

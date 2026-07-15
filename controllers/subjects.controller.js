@@ -1,5 +1,6 @@
 // controllers/subjects.controller.js
 import db from '../models/db.js';
+import SubscriptionService from "../services/subscriptionService.js";
 
 export const createSubject = async (req, res) => {
   const { name, description } = req.body;
@@ -80,34 +81,103 @@ export const getMySubjects = async (req, res) => {
 
 
 export const enrollSubject = async (req, res) => {
-  const student_id = req.user.userId; // ← Change from .id to .userId
+
+  const student_id = req.user.userId;
   const { subject_id } = req.body;
 
-  if (!student_id) return res.status(400).json({ error: 'User ID is required' });
-  if (!subject_id) return res.status(400).json({ error: 'Subject ID is required' });
+  if (!student_id)
+    return res.status(400).json({ error: "User ID is required" });
+
+  if (!subject_id)
+    return res.status(400).json({ error: "Subject ID is required" });
 
   try {
-    // Check if subject exists
-    const subjectCheck = await db.query('SELECT id FROM subjects WHERE id = $1', [subject_id]);
-    if (subjectCheck.rows.length === 0) return res.status(404).json({ error: 'Subject not found' });
 
-    // Insert enrollment
-    const result = await db.query(`
-      INSERT INTO student_subjects (student_id, subject_id)
-      VALUES ($1, $2)
-      ON CONFLICT (student_id, subject_id) DO NOTHING
-      RETURNING *
-    `, [student_id, subject_id]);
+    // =====================================
+    // CHECK SUBJECT LIMIT
+    // =====================================
 
-    if (result.rows.length === 0) {
-      return res.json({ message: 'Already enrolled in this subject' });
+    const subjectLimit =
+      await SubscriptionService.getSubjectLimit(student_id);
+
+    if (subjectLimit !== null) {
+
+      const countResult = await db.query(
+        `
+        SELECT COUNT(DISTINCT subject_id) AS total
+        FROM student_subjects
+        WHERE student_id = $1
+        `,
+        [student_id]
+      );
+
+      const joined = Number(countResult.rows[0].total);
+
+      if (joined >= subjectLimit) {
+        return res.status(403).json({
+          success: false,
+          message:
+            "You have reached your subject limit. Upgrade to EduApp Plus."
+        });
+      }
     }
 
-    res.status(201).json({ message: 'Enrolled successfully', enrollment: result.rows[0] });
+    // =====================================
+    // CHECK SUBJECT EXISTS
+    // =====================================
+
+    const subjectCheck = await db.query(
+      "SELECT id FROM subjects WHERE id = $1",
+      [subject_id]
+    );
+
+    if (subjectCheck.rows.length === 0) {
+      return res.status(404).json({
+        error: "Subject not found"
+      });
+    }
+
+    // =====================================
+    // ENROLL
+    // =====================================
+
+    const result = await db.query(
+      `
+      INSERT INTO student_subjects
+      (student_id, subject_id)
+
+      VALUES ($1,$2)
+
+      ON CONFLICT (student_id, subject_id)
+
+      DO NOTHING
+
+      RETURNING *
+      `,
+      [student_id, subject_id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.json({
+        message: "Already enrolled in this subject"
+      });
+    }
+
+    res.status(201).json({
+      message: "Enrolled successfully",
+      enrollment: result.rows[0]
+    });
+
   } catch (err) {
+
     console.error(err);
-    res.status(500).json({ error: 'Server error' });
+
+    res.status(500).json({
+      error: "Server error"
+    });
+
   }
+
 };
 
 // Get all subjects student is enrolled in

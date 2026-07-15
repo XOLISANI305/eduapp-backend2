@@ -6,6 +6,7 @@ import session from 'express-session';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import studentRoutes from "./routes/student.routes.js";
+import subscriptionRoutes from "./routes/subscriptionRoutes.js";
 
 // Routes
 import authRoutes from './routes/auth.routes.js';
@@ -21,6 +22,7 @@ import parentRoutes from './routes/parents.js';
 import parentChildrenRoutes from './routes/parent-children.js';
 import qnaRouter from './routes/qna.js';
 import studentDashboardRoutes from "./routes/studentDashboard.routes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
 
 // Setup
 dotenv.config();
@@ -75,6 +77,13 @@ app.get('/debug-env', (req, res) => {
     jwtSecret: process.env.JWT_SECRET ? '✅ loaded' : '❌ missing',
   });
 });
+
+app.use("/api/payments", paymentRoutes);
+
+app.use(
+    "/api/subscriptions",
+    subscriptionRoutes
+);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, "0.0.0.0", () => console.log(`✅ Server running on port ${PORT}`));

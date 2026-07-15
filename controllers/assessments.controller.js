@@ -1,5 +1,6 @@
 // assessments.controller.js - Updated with auto-approval for admin
 import db from '../models/db.js';
+import SubscriptionService from "../services/subscriptionService.js";
 
 // ----------------- CREATE ASSESSMENT -----------------
 export const createAssessment = async (req, res) => {
@@ -307,11 +308,43 @@ export const submitAssessment = async (req, res) => {
   }
 
   try {
-    // Check if assessment exists and is approved
+
+    // ================================
+    // CHECK QUIZ LIMIT
+    // ================================
+
+    const quizLimit = await SubscriptionService.getQuizLimit(student_id);
+
+    if (quizLimit !== null) {
+
+        const completedResult = await db.query(
+            `
+            SELECT COUNT(*) AS total
+            FROM student_assessments
+            WHERE student_id = $1
+            `,
+            [student_id]
+        );
+
+        const completed = Number(completedResult.rows[0].total);
+
+        if (completed >= quizLimit) {
+            return res.status(403).json({
+                success: false,
+                message: "You have reached your quiz limit. Upgrade to EduApp Plus."
+            });
+        }
+    }
+
+    // ================================
+    // CHECK ASSESSMENT EXISTS
+    // ================================
+
     const assessmentCheck = await db.query(
-      'SELECT id, title FROM assessments WHERE id = $1 AND approved = true',
-      [assessmentId]
+        'SELECT id, title FROM assessments WHERE id = $1 AND approved = true',
+        [assessmentId]
     );
+
     
     if (assessmentCheck.rows.length === 0) {
       return res.status(404).json({ error: 'Assessment not found or not approved' });
