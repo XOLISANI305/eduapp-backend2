@@ -153,7 +153,7 @@ export const payfastNotify = async (req, res) => {
     );
 
     // Activate subscription
-    await Subscription.activate(
+    await Payment.activate(
 
       payment.subscription_id,
 
@@ -203,51 +203,3 @@ export const paymentCancel = async (req, res) => {
 
 };
 
-export const payfastNotify = async (req, res) => {
-  try {
-
-    const valid = await PayFastService.verifyPayment(req.body);
-
-    if (!valid) {
-      return res.status(400).send("INVALID ITN");
-    }
-
-    const paymentId = req.body.m_payment_id;
-    const payfastReference = req.body.pf_payment_id;
-
-    const payment = await Payment.getById(paymentId);
-
-    if (!payment) {
-      return res.status(404).send("Payment not found");
-    }
-
-    if (payment.payment_status === "completed") {
-      return res.status(200).send("Already processed");
-    }
-
-    await Payment.markCompleted(paymentId, payfastReference);
-
-    const plan = await Subscription.getPlanById(payment.plan_id);
-
-    let expiresAt = null;
-
-    if (plan.duration_days) {
-      expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + plan.duration_days);
-    }
-
-    await Subscription.upsertSubscription({
-      userId: payment.user_id,
-      planId: payment.plan_id,
-      expiresAt,
-      paymentProvider: "PAYFAST",
-      paymentReference: payfastReference
-    });
-
-    return res.status(200).send("OK");
-
-  } catch (error) {
-    console.error("PayFast ITN Error:", error);
-    return res.status(500).send("ERROR");
-  }
-};
