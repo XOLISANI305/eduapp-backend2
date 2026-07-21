@@ -1,5 +1,6 @@
 import express from 'express';
 import db from '../models/db.js';
+import { notifyNewQnaMessage } from './notifications.js';
 
 const router = express.Router();
 
@@ -70,7 +71,7 @@ router.post('/answers/:answerId/comments', async (req, res) => {
        VALUES ($1, $2, $3) RETURNING *`,
       [answerId, body, user_id]
     );
-    
+
     const comment = await db.query(
       `SELECT c.id, c.body, c.created_at, u.full_name AS author
        FROM comments_for_qna c
@@ -78,8 +79,33 @@ router.post('/answers/:answerId/comments', async (req, res) => {
        WHERE c.id = $1`,
       [result.rows[0].id]
     );
-    
+
     res.status(201).json(comment.rows[0]);
+
+    // --- Push notification: tell the answer's owner someone replied ---
+    try {
+      const { rows } = await db.query(
+        `SELECT a.author_id AS answer_owner_id, q.subject_id, q.title, s.name AS subject_name
+         FROM answers_for_qna a
+         JOIN questions_for_qna q ON q.id = a.question_id
+         JOIN subjects s ON s.id = q.subject_id
+         WHERE a.id = $1`,
+        [answerId]
+      );
+      const answerInfo = rows[0];
+
+      if (answerInfo) {
+        await notifyNewQnaMessage({
+          recipientUserIds: [answerInfo.answer_owner_id],
+          senderUserId: user_id,
+          subjectId: answerInfo.subject_id,
+          subjectName: answerInfo.subject_name,
+          questionTitle: answerInfo.title,
+        });
+      }
+    } catch (notifyErr) {
+      console.error('Error sending comment notification:', notifyErr);
+    }
   } catch (err) {
     console.error('Error adding comment:', err);
     res.status(500).json({ error: 'Failed to add comment' });
@@ -149,7 +175,42 @@ router.post('/answers', async (req, res) => {
        VALUES ($1, $2, $3) RETURNING *`,
       [question_id, body, author_id]
     );
+
     res.status(201).json(result.rows[0]);
+
+    // --- Push notification: tell the question owner + prior answerers ---
+    try {
+      const { rows } = await db.query(
+        `SELECT q.subject_id, q.title, q.author_id AS owner_id, s.name AS subject_name
+         FROM questions_for_qna q
+         JOIN subjects s ON s.id = q.subject_id
+         WHERE q.id = $1`,
+        [question_id]
+      );
+      const question = rows[0];
+
+      if (question) {
+        const { rows: priorAnswerers } = await db.query(
+          `SELECT DISTINCT author_id FROM answers_for_qna WHERE question_id = $1`,
+          [question_id]
+        );
+
+        const recipientUserIds = [
+          question.owner_id,
+          ...priorAnswerers.map((r) => r.author_id),
+        ];
+
+        await notifyNewQnaMessage({
+          recipientUserIds,
+          senderUserId: author_id,
+          subjectId: question.subject_id,
+          subjectName: question.subject_name,
+          questionTitle: question.title,
+        });
+      }
+    } catch (notifyErr) {
+      console.error('Error sending answer notification:', notifyErr);
+    }
   } catch (err) {
     console.error('Error creating answer:', err);
     res.status(500).json({ error: 'Failed to add answer' });

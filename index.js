@@ -23,6 +23,7 @@ import parentChildrenRoutes from './routes/parent-children.js';
 import qnaRouter from './routes/qna.js';
 import studentDashboardRoutes from "./routes/studentDashboard.routes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
+import notificationsRouter from './routes/notifications.js';
 
 // Setup
 dotenv.config();
@@ -84,6 +85,91 @@ app.use(
     "/api/subscriptions",
     subscriptionRoutes
 );
+
+app.get("/payment/success", (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Payment Successful</title>
+      <style>
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+          font-family: Arial, Helvetica, sans-serif;
+        }
+
+        body {
+          background: linear-gradient(135deg, #0f172a, #1e293b);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          min-height: 100vh;
+          color: white;
+        }
+
+        .card {
+          background: #fff;
+          color: #333;
+          padding: 40px;
+          border-radius: 16px;
+          text-align: center;
+          max-width: 450px;
+          width: 90%;
+          box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+        }
+
+        .icon {
+          width: 90px;
+          height: 90px;
+          background: #22c55e;
+          border-radius: 50%;
+          margin: 0 auto 20px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          font-size: 48px;
+          color: white;
+          font-weight: bold;
+        }
+
+        h1 {
+          color: #16a34a;
+          margin-bottom: 15px;
+        }
+
+        p {
+          color: #555;
+          font-size: 16px;
+          line-height: 1.7;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="card">
+        <div class="icon">✓</div>
+        <h1>Payment Successful!</h1>
+        <p>
+          Thank you for your payment.<br><br>
+          Your subscription has been activated successfully.
+        </p>
+      </div>
+    </body>
+    </html>
+  `);
+});
+
+app.get("/payment/cancel", (req, res) => {
+  res.send(`
+    <h1>Payment Cancelled</h1>
+    <p>Your payment was cancelled. You can return to the app and try again.</p>
+  `);
+});
+
+app.use('/notifications', notificationsRouter);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, "0.0.0.0", () => console.log(`✅ Server running on port ${PORT}`));

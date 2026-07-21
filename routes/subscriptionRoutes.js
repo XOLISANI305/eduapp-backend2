@@ -51,5 +51,17 @@ router.post(
     askTutor
 );
 
+// in your routes file, e.g. paymentRoutes.js
+router.get("/payment/success", (req, res) => {
+  res.send("Payment successful! Thank you for your purchase.");
+  // or render a proper success page:
+  // res.render("payment-success");
+  // or redirect to your frontend app's success page if this is an API-only backend:
+  // res.redirect("https://your-frontend-app.com/payment-success");
+});
+
+router.get("/payment/cancel", (req, res) => {
+  res.send("Payment was cancelled.");
+});
 
 export default router;
