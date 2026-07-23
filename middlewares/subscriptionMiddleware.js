@@ -6,6 +6,10 @@ export const requireFeature = (feature) => {
         try {
 
             const userId = req.user.id;
+            
+             if (req.user.role === "admin" || req.user.role === "teacher") {
+                return next();
+            }
 
             let allowed = false;
 
